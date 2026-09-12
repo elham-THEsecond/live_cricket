@@ -183,5 +183,7 @@ class Handler(BaseHTTPRequestHandler):
 
 
 if __name__ == "__main__":
-    print("serving on http://0.0.0.0:8000  (GET /api/streams, POST /api/refresh)")
-    HTTPServer(("0.0.0.0", 8000), Handler).serve_forever()
+    import os
+    port = int(os.environ.get("PORT", "8000"))  # Render/Railway inject PORT
+    print(f"serving on http://0.0.0.0:{port}  (GET /api/streams, POST /api/refresh)")
+    HTTPServer(("0.0.0.0", port), Handler).serve_forever()

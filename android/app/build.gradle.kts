@@ -1,3 +1,5 @@
+import java.util.Properties
+
 plugins {
     id("com.android.application")
     // The Flutter Gradle Plugin must be applied after the Android and Kotlin Gradle plugins.
@@ -25,11 +27,27 @@ android {
         versionName = flutter.versionName
     }
 
+    signingConfigs {
+        create("release") {
+            val props = Properties().apply {
+                val f = file(System.getenv("MYAPP_GRADLE_PROPERTIES") ?: "${System.getProperty("user.home")}/.gradle/gradle.properties")
+                if (f.exists()) load(f.inputStream())
+            }
+            storeFile = file(props.getProperty("MYAPP_RELEASE_STORE_FILE", System.getenv("MYAPP_RELEASE_STORE_FILE") ?: "~/.gradle/cricket_keystore.jks"))
+            storePassword = props.getProperty("MYAPP_RELEASE_STORE_PASSWORD", System.getenv("MYAPP_RELEASE_STORE_PASSWORD") ?: "")
+            keyAlias = props.getProperty("MYAPP_RELEASE_KEY_ALIAS", System.getenv("MYAPP_RELEASE_KEY_ALIAS") ?: "cricket")
+            keyPassword = props.getProperty("MYAPP_RELEASE_KEY_PASSWORD", System.getenv("MYAPP_RELEASE_KEY_PASSWORD") ?: "")
+        }
+    }
+
     buildTypes {
         release {
-            // TODO: Add your own signing config for the release build.
-            // Signing with the debug keys for now, so `flutter run --release` works.
-            signingConfig = signingConfigs.getByName("debug")
+            isMinifyEnabled = true
+            proguardFiles(
+                getDefaultProguardFile("proguard-android-optimize.txt"),
+                "proguard-rules.pro"
+            )
+            signingConfig = signingConfigs.getByName("release")
         }
     }
 }
