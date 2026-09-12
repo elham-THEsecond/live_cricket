@@ -19,13 +19,24 @@ subprojects {
     project.evaluationDependsOn(":app")
 }
 
-// ponytail: better_player_plus pins Kotlin's jvmTarget only when AGP < 9; on AGP 9
-// it leaves Kotlin at its own default (21) while compileOptions says 17, and the
-// build dies on "Inconsistent JVM Target Compatibility". Pin it here instead of
-// forking the package. Drop when the upstream guard covers AGP >= 9.
+// ponytail: some transitive plugin modules (better_player_plus previously,
+// screen_brightness_android from media_kit_video now) compile Java with 1.8
+// while their Kotlin targets 17/21 — AGP 9 fails on the mismatch. Pin both
+// Java and Kotlin to 17 for the whole module tree. Drop when upstream guards
+// cover AGP >= 9.
 subprojects {
     tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile>().configureEach {
         compilerOptions.jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_17)
+    }
+    plugins.withId("com.android.library") {
+        // Override each module's declared Java target — the module's own
+        // `compileOptions` block would otherwise win.
+        extensions.configure<com.android.build.gradle.LibraryExtension> {
+            compileOptions {
+                sourceCompatibility = JavaVersion.VERSION_17
+                targetCompatibility = JavaVersion.VERSION_17
+            }
+        }
     }
 }
 

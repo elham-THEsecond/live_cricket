@@ -9,10 +9,11 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
-  # NOT better_player: 0.0.84's Android module is AGP-4-era (no `namespace`)
-  # and cannot configure under this project's AGP 9.0.1. The maintained fork
-  # ships build.gradle.kts with a namespace and Media3, same Dart API.
-  better_player_plus: ^1.4.1
+  # media_kit: native libmpv player. Replaces better_player_plus (broken
+  # controls, weak quality/track switching, no stall recovery).
+  media_kit: ^1.1.11
+  media_kit_libs_video: ^1.0.5
+  media_kit_video: ^1.2.5
   http: ^1.1.0
   shared_preferences: ^2.2.0
   provider: ^6.0.5

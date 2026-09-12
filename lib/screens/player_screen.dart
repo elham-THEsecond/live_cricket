@@ -1,12 +1,19 @@
-import 'package:better_player_plus/better_player_plus.dart';
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:media_kit/media_kit.dart';
+import 'package:media_kit_video/media_kit_video.dart';
 
 import '../models/channel.dart';
 import '../models/stream_url.dart';
 import '../utils/country_flags.dart';
 import '../utils/theme.dart';
 
+/// Fullscreen-ish player screen for one channel.
+///
+/// Uses media_kit (libmpv): real audio/video track switching, playback speed,
+/// volume, and stall-aware auto-failover between the channel's sources.
 class PlayerScreen extends StatefulWidget {
   final Channel channel;
 
@@ -17,31 +24,68 @@ class PlayerScreen extends StatefulWidget {
 }
 
 class _PlayerScreenState extends State<PlayerScreen> {
-  late BetterPlayerController _controller;
+  late Player _player;
+  late VideoController _videoController;
+
   int _currentStreamIndex = 0;
   bool _isLoading = true;
+  bool _isStalled = false;
   String? _errorMessage;
-  // The plugin reposts `exception` from its video-value listener on every tick
-  // while the error is latched, and the event carries no source identity — so a
-  // stale repeat after a switch would otherwise advance a second time and skip
-  // a working source. Ignore failovers arriving immediately after the previous
-  // one. Nothing is lost: the reposting means a genuinely dead source is
-  // reported again once this window passes.
-  static const Duration _failoverCooldown = Duration(seconds: 1);
+
+  // Stall detector: if playback neither progresses nor completes within
+  // [stallTimeout] of starting (or after a buffering pause), the source is
+  // dead/slow on this connection — fail over instead of waiting forever.
+  static const Duration _stallTimeout = Duration(seconds: 10);
+  Timer? _stallTimer;
+
+  // Failover cooldown mirrors the old better_player guard: media_kit can emit
+  // multiple errors for one failure; we don't want to skip two sources for one
+  // dead stream.
+  static const Duration _failoverCooldown = Duration(seconds: 2);
   DateTime? _lastFailoverAt;
 
-  Channel get _channel => widget.channel;
-  StreamUrl get _currentStream => _channel.streams[_currentStreamIndex];
+  StreamUrl get _currentStream => widget.channel.streams[_currentStreamIndex];
 
   @override
   void initState() {
     super.initState();
-    SystemChrome.setPreferredOrientations([
-      DeviceOrientation.landscapeLeft,
-      DeviceOrientation.landscapeRight,
-    ]);
-    SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersiveSticky);
-    _setupPlayer(_currentStream);
+    _init();
+  }
+
+  Future<void> _init() async {
+    MediaKit.ensureInitialized();
+    _player = Player();
+    await _player.open(Media(_currentStream.url,
+        httpHeaders: _headersFor(_currentStream)));
+    _videoController = VideoController(_player);
+
+    _player.stream.completed.listen((_) {});
+    _player.stream.error.listen((e) {
+      if (!mounted) return;
+      _switchToNextStream();
+    });
+    _player.stream.position.listen((_) {});
+    _player.stream.buffering.listen((b) {
+      if (!mounted) return;
+      _isStalled = b;
+      if (b) {
+        _startStallTimer();
+      } else {
+        _cancelStallTimer();
+      }
+      setState(() {});
+    });
+    _player.stream.playing.listen((p) {
+      if (!mounted) return;
+      if (p) {
+        _isLoading = false;
+        _cancelStallTimer();
+      }
+      setState(() {});
+    });
+
+    if (!mounted) return;
+    setState(() {});
   }
 
   Map<String, String> _headersFor(StreamUrl stream) => {
@@ -50,78 +94,20 @@ class _PlayerScreenState extends State<PlayerScreen> {
         'Accept': '*/*',
       };
 
-  void _setupPlayer(StreamUrl stream) {
-    _controller = BetterPlayerController(
-      BetterPlayerConfiguration(
-        aspectRatio: 16 / 9,
-        autoPlay: true,
-        looping: false,
-        // We do our own landscape lock and keep the overlay in the same route,
-        // so better_player must not push its own fullscreen route on top.
-        fullScreenByDefault: false,
-        allowedScreenSleep: false,
-        fit: BoxFit.contain,
-        placeholder: const Center(
-          child: CircularProgressIndicator(color: AppColors.primary),
-        ),
-        errorBuilder: (context, errorMessage) => _errorView(errorMessage),
-        controlsConfiguration: BetterPlayerControlsConfiguration(
-          enablePlayPause: true,
-          enableFullscreen: true,
-          enableSkips: false,
-          enableProgressBar: false,
-          enableProgressBarDrag: false,
-          enableAudioTracks: true,
-          enableSubtitles: false,
-          enablePip: true,
-          enableOverflowMenu: true,
-          overflowMenuIconsColor: Colors.white,
-          overflowMenuCustomItems: [
-            BetterPlayerOverflowMenuItem(
-              Icons.high_quality,
-              'Source ${_currentStreamIndex + 1}/${_channel.streams.length}',
-              _showSourceSelector,
-            ),
-          ],
-        ),
-      ),
-      betterPlayerDataSource: BetterPlayerDataSource(
-        BetterPlayerDataSourceType.network,
-        stream.url,
-        liveStream: true,
-        headers: _headersFor(stream),
-        useAsmsTracks: true,
-        useAsmsSubtitles: true,
-      ),
-    );
-
-    _controller.addEventsListener(_onPlayerEvent);
+  void _startStallTimer() {
+    _cancelStallTimer();
+    _stallTimer = Timer(_stallTimeout, () {
+      if (!mounted) return;
+      _switchToNextStream();
+    });
   }
 
-  void _onPlayerEvent(BetterPlayerEvent event) {
-    if (!mounted) return;
-    switch (event.betterPlayerEventType) {
-      // better_player reports failures as `exception`; there is no `error` case.
-      case BetterPlayerEventType.exception:
-        _switchToNextStream();
-        break;
-      // No reset on `setupDataSource`: our own failover calls it, so clearing
-      // the cooldown there would re-open the window the cooldown exists to
-      // close. It expires on its own, which is exactly when a genuinely dead
-      // new source starts being re-reported.
-      case BetterPlayerEventType.play:
-      case BetterPlayerEventType.initialized:
-        setState(() {
-          _isLoading = false;
-          _errorMessage = null;
-        });
-        break;
-      default:
-        break;
-    }
+  void _cancelStallTimer() {
+    _stallTimer?.cancel();
+    _stallTimer = null;
   }
 
-  void _switchToNextStream() {
+  Future<void> _switchToNextStream() async {
     final now = DateTime.now();
     if (_lastFailoverAt != null &&
         now.difference(_lastFailoverAt!) < _failoverCooldown) {
@@ -129,7 +115,7 @@ class _PlayerScreenState extends State<PlayerScreen> {
     }
     _lastFailoverAt = now;
 
-    if (_currentStreamIndex >= _channel.streams.length - 1) {
+    if (_currentStreamIndex >= widget.channel.streams.length - 1) {
       if (!mounted) return;
       setState(() {
         _isLoading = false;
@@ -142,20 +128,13 @@ class _PlayerScreenState extends State<PlayerScreen> {
       _currentStreamIndex++;
       _isLoading = true;
       _errorMessage = null;
+      _isStalled = false;
     });
-    _controller.setupDataSource(
-      BetterPlayerDataSource(
-        BetterPlayerDataSourceType.network,
-        _currentStream.url,
-        liveStream: true,
-        headers: _headersFor(_currentStream),
-        useAsmsTracks: true,
-        useAsmsSubtitles: true,
-      ),
-    );
+    await _player.open(Media(_currentStream.url,
+        httpHeaders: _headersFor(_currentStream)));
   }
 
-  void _selectStream(int index) {
+  Future<void> _selectStream(int index) async {
     if (index == _currentStreamIndex) return;
     setState(() {
       _currentStreamIndex = index;
@@ -163,16 +142,8 @@ class _PlayerScreenState extends State<PlayerScreen> {
       _errorMessage = null;
       _lastFailoverAt = null;
     });
-    _controller.setupDataSource(
-      BetterPlayerDataSource(
-        BetterPlayerDataSourceType.network,
-        _currentStream.url,
-        liveStream: true,
-        headers: _headersFor(_currentStream),
-        useAsmsTracks: true,
-        useAsmsSubtitles: true,
-      ),
-    );
+    await _player.open(Media(_currentStream.url,
+        httpHeaders: _headersFor(_currentStream)));
   }
 
   void _showSourceSelector() {
@@ -182,9 +153,9 @@ class _PlayerScreenState extends State<PlayerScreen> {
       builder: (context) => SafeArea(
         child: ListView.builder(
           shrinkWrap: true,
-          itemCount: _channel.streams.length,
+          itemCount: widget.channel.streams.length,
           itemBuilder: (context, i) {
-            final stream = _channel.streams[i];
+            final stream = widget.channel.streams[i];
             final selected = i == _currentStreamIndex;
             return ListTile(
               leading: Icon(
@@ -208,35 +179,61 @@ class _PlayerScreenState extends State<PlayerScreen> {
     );
   }
 
-  Widget _errorView(String? message) => Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            const Icon(Icons.error_outline, color: Colors.red, size: 48),
-            const SizedBox(height: 16),
-            const Text('Stream error', style: TextStyle(color: Colors.white)),
-            const SizedBox(height: 8),
-            Text(
-              message ?? '',
-              textAlign: TextAlign.center,
-              style: const TextStyle(color: Colors.white54, fontSize: 12),
-            ),
-            const SizedBox(height: 16),
-            ElevatedButton(
-              // Manual retry must not be swallowed by the failover cooldown.
-              onPressed: () {
-                _lastFailoverAt = null;
-                _switchToNextStream();
-              },
-              child: const Text('Try next source'),
-            ),
-          ],
+  void _showSettingsSheet() {
+    showModalBottomSheet<void>(
+      context: context,
+      backgroundColor: AppColors.surface,
+      builder: (context) => SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text('Playback',
+                  style: TextStyle(
+                      color: Colors.white, fontWeight: FontWeight.bold)),
+              const SizedBox(height: 16),
+              // Volume
+              Row(children: [
+                const Icon(Icons.volume_up, color: Colors.white),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Slider(
+                    value: _player.state.volume.clamp(0.0, 1.0),
+                    onChanged: (v) => _player.setVolume(v),
+                  ),
+                ),
+              ]),
+              // Speed
+              Row(children: [
+                const Icon(Icons.speed, color: Colors.white),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Wrap(
+                    spacing: 8,
+                    children: [0.5, 1.0, 1.5, 2.0].map((s) {
+                      final active = (_player.state.rate - s).abs() < 0.01;
+                      return ChoiceChip(
+                        label: Text('${s}x'),
+                        selected: active,
+                        onSelected: (_) => _player.setRate(s),
+                      );
+                    }).toList(),
+                  ),
+                ),
+              ]),
+            ],
+          ),
         ),
-      );
+      ),
+    );
+  }
 
   @override
   void dispose() {
-    _controller.dispose();
+    _cancelStallTimer();
+    _player.dispose();
     SystemChrome.setPreferredOrientations([
       DeviceOrientation.portraitUp,
       DeviceOrientation.portraitDown,
@@ -253,7 +250,17 @@ class _PlayerScreenState extends State<PlayerScreen> {
         backgroundColor: Colors.black,
         body: Stack(
           children: [
-            Positioned.fill(child: BetterPlayer(controller: _controller)),
+            Positioned.fill(
+              child: Video(
+                controller: _videoController,
+                controls: NoVideoControls,
+              ),
+            ),
+            if (_errorMessage != null) _errorView(_errorMessage!),
+            if (_isLoading && _errorMessage == null)
+              const Center(
+                child: CircularProgressIndicator(color: AppColors.primary),
+              ),
             Positioned(
               top: 12,
               left: 12,
@@ -265,6 +272,33 @@ class _PlayerScreenState extends State<PlayerScreen> {
       ),
     );
   }
+
+  Widget _errorView(String message) => Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            const Icon(Icons.error_outline, color: Colors.red, size: 48),
+            const SizedBox(height: 16),
+            const Text('Stream error',
+                style: TextStyle(color: Colors.white)),
+            const SizedBox(height: 8),
+            Text(
+              message,
+              textAlign: TextAlign.center,
+              style: const TextStyle(color: Colors.white54, fontSize: 12),
+            ),
+            const SizedBox(height: 16),
+            ElevatedButton(
+              // Manual retry must not be swallowed by the failover cooldown.
+              onPressed: () {
+                _lastFailoverAt = null;
+                _switchToNextStream();
+              },
+              child: const Text('Try next source'),
+            ),
+          ],
+        ),
+      );
 
   Widget _overlay() {
     return Row(
@@ -279,14 +313,14 @@ class _PlayerScreenState extends State<PlayerScreen> {
             mainAxisSize: MainAxisSize.min,
             children: [
               Text(
-                countryFlag(_channel.country),
+                countryFlag(widget.channel.country),
                 style: const TextStyle(fontSize: 16),
               ),
               const SizedBox(width: 8),
               ConstrainedBox(
                 constraints: const BoxConstraints(maxWidth: 220),
                 child: Text(
-                  _channel.name,
+                  widget.channel.name,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: const TextStyle(
@@ -297,7 +331,7 @@ class _PlayerScreenState extends State<PlayerScreen> {
               ),
               const SizedBox(width: 8),
               Text(
-                'Source ${_currentStreamIndex + 1}/${_channel.streams.length}',
+                'Source ${_currentStreamIndex + 1}/${widget.channel.streams.length}',
                 style: const TextStyle(color: Colors.white70, fontSize: 12),
               ),
               if (_isLoading) ...[
@@ -311,6 +345,11 @@ class _PlayerScreenState extends State<PlayerScreen> {
                   ),
                 ),
               ],
+              if (_isStalled) ...[
+                const SizedBox(width: 8),
+                const Icon(Icons.hourglass_bottom,
+                    color: Colors.orange, size: 16),
+              ],
               if (_errorMessage != null) ...[
                 const SizedBox(width: 8),
                 const Icon(Icons.warning_amber, color: Colors.orange, size: 16),
@@ -319,6 +358,18 @@ class _PlayerScreenState extends State<PlayerScreen> {
           ),
         ),
         const Spacer(),
+        IconButton(
+          tooltip: 'Settings',
+          onPressed: _showSettingsSheet,
+          icon: const Icon(Icons.tune, color: Colors.white),
+          style: IconButton.styleFrom(backgroundColor: Colors.black54),
+        ),
+        IconButton(
+          tooltip: 'Sources',
+          onPressed: _showSourceSelector,
+          icon: const Icon(Icons.library_books, color: Colors.white),
+          style: IconButton.styleFrom(backgroundColor: Colors.black54),
+        ),
         IconButton(
           tooltip: 'Close player',
           onPressed: () => Navigator.of(context).pop(),

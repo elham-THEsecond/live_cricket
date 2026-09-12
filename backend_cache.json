@@ -1,6 +1,45 @@
 {
- "ts": 1789226496.0850387,
+ "ts": 1789238895.54134,
  "channels": [
+  {
+   "id": "WataniaSports.tn",
+   "name": "Watania Sports",
+   "alt_names": [],
+   "country": "TN",
+   "logo": "",
+   "streams": []
+  },
+  {
+   "id": "AfricaSportsTV.fr",
+   "name": "Africa Sports TV",
+   "alt_names": [],
+   "country": "FR",
+   "logo": "",
+   "streams": []
+  },
+  {
+   "id": "StarSports2.in",
+   "name": "Star Sports 2",
+   "alt_names": [],
+   "country": "IN",
+   "logo": "",
+   "streams": [
+    {
+     "url": "http://tvsen5.aynascope.net/cXPB2LKkErN9/index.m3u8",
+     "referrer": "",
+     "user_agent": "",
+     "status": "live",
+     "validated": "2026-09-12T18:48:15.420970+00:00"
+    },
+    {
+     "url": "https://tvsen7.aynaott.com/ssport2hd/index.m3u8",
+     "referrer": "",
+     "user_agent": "",
+     "status": "live",
+     "validated": "2026-09-12T18:48:15.420992+00:00"
+    }
+   ]
+  },
   {
    "id": "HimalayaSportsHD.np",
    "name": "Himalaya Sports HD",
@@ -10,12 +49,103 @@
    "streams": []
   },
   {
-   "id": "SkySportsCricket.uk",
-   "name": "Sky Sports Cricket",
-   "alt_names": [],
-   "country": "UK",
+   "id": "SonySportsTen4.in",
+   "name": "Sony Sports Ten 4",
+   "alt_names": [
+    "Sony Ten 4"
+   ],
+   "country": "IN",
    "logo": "",
-   "streams": []
+   "streams": [
+    {
+     "url": "https://cloudplay-sonyliv.pages.dev/ten4.m3u8",
+     "referrer": "https://sonyliv.com/",
+     "user_agent": "Mozilla/5.0 (Linux; Android 14) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0 Mobile Safari/537.36",
+     "status": "live",
+     "validated": "2026-09-12T18:48:15.421006+00:00"
+    },
+    {
+     "url": "https://cloudplay-sonyliv.pages.dev/ten4hd.m3u8",
+     "referrer": "https://sonyliv.com/",
+     "user_agent": "Mozilla/5.0 (Linux; Android 14) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0 Mobile Safari/537.36",
+     "status": "live",
+     "validated": "2026-09-12T18:48:15.421014+00:00"
+    }
+   ]
+  },
+  {
+   "id": "WillowSports.us",
+   "name": "Willow Sports",
+   "alt_names": [],
+   "country": "US",
+   "logo": "",
+   "streams": [
+    {
+     "url": "https://d36r8jifhgsk5j.cloudfront.net/Willow_TV1080p.m3u8",
+     "referrer": "",
+     "user_agent": "",
+     "status": "live",
+     "validated": "2026-09-12T18:48:15.421031+00:00"
+    },
+    {
+     "url": "https://jmp2.uk/plu-6972546cc62833833a187f50.m3u8",
+     "referrer": "",
+     "user_agent": "",
+     "status": "live",
+     "validated": "2026-09-12T18:48:15.421039+00:00"
+    },
+    {
+     "url": "https://amg01269-amg01269c1-firetv-us-5377.playouts.now.amagi.tv/playlist.m3u8",
+     "referrer": "",
+     "user_agent": "",
+     "status": "live",
+     "validated": "2026-09-12T18:48:15.421046+00:00"
+    },
+    {
+     "url": "https://amg01269-amg01269c1-sportstribal-emea-5204.playouts.now.amagi.tv/ts-eu-w1-n2/playlist/amg01269-willowtvfast-willowplus-sportstribalemea/playlist.m3u8",
+     "referrer": "",
+     "user_agent": "",
+     "status": "live",
+     "validated": "2026-09-12T18:48:15.421052+00:00"
+    },
+    {
+     "url": "https://amg01269-amg01269c1-distrotv-us-5379.playouts.now.amagi.tv/playlist/amg01269-willowtvfast-willowplus-distrotvus/playlist.m3u8",
+     "referrer": "",
+     "user_agent": "",
+     "status": "live",
+     "validated": "2026-09-12T18:48:15.421059+00:00"
+    },
+    {
+     "url": "https://d36r8jifhgsk5j.cloudfront.net/Willow_TV.m3u8",
+     "referrer": "",
+     "user_agent": "",
+     "status": "live",
+     "validated": "2026-09-12T18:48:15.421066+00:00"
+    }
+   ]
+  },
+  {
+   "id": "PTVSports.pk",
+   "name": "PTV Sports",
+   "alt_names": [],
+   "country": "PK",
+   "logo": "",
+   "streams": [
+    {
+     "url": "http://103.250.28.74:8000/play/a019/index.m3u8",
+     "referrer": "",
+     "user_agent": "",
+     "status": "live",
+     "validated": "2026-09-12T18:48:15.421074+00:00"
+    },
+    {
+     "url": "https://tvsen7.aynascope.net/Sports1/index.m3u8",
+     "referrer": "",
+     "user_agent": "",
+     "status": "live",
+     "validated": "2026-09-12T18:48:15.421080+00:00"
+    }
+   ]
   },
   {
    "id": "SonySportsTen1.in",
@@ -33,121 +163,22 @@
      "referrer": "https://sonyliv.com/",
      "user_agent": "Mozilla/5.0 (Linux; Android 14) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0 Mobile Safari/537.36",
      "status": "live",
-     "validated": "2026-09-12T15:21:36.070960+00:00"
+     "validated": "2026-09-12T18:48:15.421091+00:00"
     },
     {
      "url": "https://cloudplay-sonyliv.pages.dev/ten1.m3u8",
      "referrer": "https://sonyliv.com/",
      "user_agent": "Mozilla/5.0 (Linux; Android 14) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0 Mobile Safari/537.36",
      "status": "live",
-     "validated": "2026-09-12T15:21:36.070995+00:00"
+     "validated": "2026-09-12T18:48:15.421099+00:00"
     }
    ]
   },
   {
-   "id": "WataniaSports.tn",
-   "name": "Watania Sports",
+   "id": "WillowXtra.us",
+   "name": "Willow Xtra",
    "alt_names": [],
-   "country": "TN",
-   "logo": "",
-   "streams": []
-  },
-  {
-   "id": "StarSports2.in",
-   "name": "Star Sports 2",
-   "alt_names": [],
-   "country": "IN",
-   "logo": "",
-   "streams": [
-    {
-     "url": "http://tvsen5.aynascope.net/cXPB2LKkErN9/index.m3u8",
-     "referrer": "",
-     "user_agent": "",
-     "status": "live",
-     "validated": "2026-09-12T15:21:36.071023+00:00"
-    },
-    {
-     "url": "https://tvsen7.aynaott.com/ssport2hd/index.m3u8",
-     "referrer": "",
-     "user_agent": "",
-     "status": "live",
-     "validated": "2026-09-12T15:21:36.071033+00:00"
-    }
-   ]
-  },
-  {
-   "id": "FoxCricket.au",
-   "name": "Fox Cricket",
-   "alt_names": [
-    "Fox Sports 501"
-   ],
-   "country": "AU",
-   "logo": "",
-   "streams": []
-  },
-  {
-   "id": "Willow.us",
-   "name": "Willow",
-   "alt_names": [
-    "Willow TV"
-   ],
    "country": "US",
-   "logo": "",
-   "streams": [
-    {
-     "url": "http://tvsen5.aynascope.net/willowhd/index.m3u8",
-     "referrer": "",
-     "user_agent": "",
-     "status": "live",
-     "validated": "2026-09-12T15:21:36.071057+00:00"
-    },
-    {
-     "url": "http://tvsen7.aynascope.net/rEBp38Ax/index.m3u8",
-     "referrer": "",
-     "user_agent": "",
-     "status": "live",
-     "validated": "2026-09-12T15:21:36.071064+00:00"
-    },
-    {
-     "url": "https://tvsen5.aynaott.com/willowhd/index.m3u8",
-     "referrer": "",
-     "user_agent": "",
-     "status": "live",
-     "validated": "2026-09-12T15:21:36.071071+00:00"
-    }
-   ]
-  },
-  {
-   "id": "StarSportsSelect1.in",
-   "name": "Star Sports Select 1",
-   "alt_names": [],
-   "country": "IN",
-   "logo": "",
-   "streams": []
-  },
-  {
-   "id": "ASports.pk",
-   "name": "A Sports",
-   "alt_names": [],
-   "country": "PK",
-   "logo": "",
-   "streams": []
-  },
-  {
-   "id": "AfricaSportsTV.fr",
-   "name": "Africa Sports TV",
-   "alt_names": [],
-   "country": "FR",
-   "logo": "",
-   "streams": []
-  },
-  {
-   "id": "StarSports1.in",
-   "name": "Star Sports 1",
-   "alt_names": [
-    "Star Sports"
-   ],
-   "country": "IN",
    "logo": "",
    "streams": []
   },
@@ -166,119 +197,14 @@
      "referrer": "https://sonyliv.com/",
      "user_agent": "Mozilla/5.0 (Linux; Android 14) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0 Mobile Safari/537.36",
      "status": "live",
-     "validated": "2026-09-12T15:21:36.071085+00:00"
+     "validated": "2026-09-12T18:48:15.421108+00:00"
     },
     {
      "url": "https://cloudplay-sonyliv.pages.dev/ten5.m3u8",
      "referrer": "https://sonyliv.com/",
      "user_agent": "Mozilla/5.0 (Linux; Android 14) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0 Mobile Safari/537.36",
      "status": "live",
-     "validated": "2026-09-12T15:21:36.071092+00:00"
-    }
-   ]
-  },
-  {
-   "id": "PTVSports.pk",
-   "name": "PTV Sports",
-   "alt_names": [],
-   "country": "PK",
-   "logo": "",
-   "streams": [
-    {
-     "url": "http://103.250.28.74:8000/play/a019/index.m3u8",
-     "referrer": "",
-     "user_agent": "",
-     "status": "live",
-     "validated": "2026-09-12T15:21:36.071101+00:00"
-    },
-    {
-     "url": "https://tvsen7.aynascope.net/Sports1/index.m3u8",
-     "referrer": "",
-     "user_agent": "",
-     "status": "live",
-     "validated": "2026-09-12T15:21:36.071107+00:00"
-    }
-   ]
-  },
-  {
-   "id": "SkySportsCricket.ie",
-   "name": "Sky Sports Cricket",
-   "alt_names": [],
-   "country": "IE",
-   "logo": "",
-   "streams": [
-    {
-     "url": "https://leaf.highfly.dev/m3u/now-sky-sports-cricket/live.m3u8",
-     "referrer": "",
-     "user_agent": "Mozilla/5.0 (Linux; Android 14) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0 Mobile Safari/537.36",
-     "status": "live",
-     "validated": "2026-09-12T15:21:36.071116+00:00"
-    }
-   ]
-  },
-  {
-   "id": "SonySportsTen2.in",
-   "name": "Sony Sports Ten 2",
-   "alt_names": [
-    "Sony Ten 2",
-    "Ten 2",
-    "Ten Action",
-    "Ten Action+"
-   ],
-   "country": "IN",
-   "logo": "",
-   "streams": [
-    {
-     "url": "https://cloudplay-sonyliv.pages.dev/ten2hd.m3u8",
-     "referrer": "https://sonyliv.com/",
-     "user_agent": "Mozilla/5.0 (Linux; Android 14) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0 Mobile Safari/537.36",
-     "status": "live",
-     "validated": "2026-09-12T15:21:36.071124+00:00"
-    },
-    {
-     "url": "https://cloudplay-sonyliv.pages.dev/ten2.m3u8",
-     "referrer": "https://sonyliv.com/",
-     "user_agent": "Mozilla/5.0 (Linux; Android 14) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0 Mobile Safari/537.36",
-     "status": "live",
-     "validated": "2026-09-12T15:21:36.071133+00:00"
-    }
-   ]
-  },
-  {
-   "id": "AstroCricket.my",
-   "name": "Astro Cricket",
-   "alt_names": [],
-   "country": "MY",
-   "logo": "",
-   "streams": []
-  },
-  {
-   "id": "CricketGold.au",
-   "name": "Cricket Gold",
-   "alt_names": [],
-   "country": "AU",
-   "logo": "",
-   "streams": [
-    {
-     "url": "https://streams2.sofast.tv/ptnr-yupptv/title-cricketgold/v1/master/611d79b11b77e2f571934fd80ca1413453772ac7/b2048bb8-1686-4432-aa50-647245383e0c/manifest.m3u8",
-     "referrer": "",
-     "user_agent": "",
-     "status": "live",
-     "validated": "2026-09-12T15:21:36.071144+00:00"
-    },
-    {
-     "url": "https://streams2.sofast.tv/scheduler/scheduleMaster/418.m3u8",
-     "referrer": "",
-     "user_agent": "",
-     "status": "live",
-     "validated": "2026-09-12T15:21:36.071154+00:00"
-    },
-    {
-     "url": "https://d382r3rgbxdixq.cloudfront.net/scheduler/scheduleMaster/418.m3u8",
-     "referrer": "",
-     "user_agent": "",
-     "status": "live",
-     "validated": "2026-09-12T15:21:36.071161+00:00"
+     "validated": "2026-09-12T18:48:15.421114+00:00"
     }
    ]
   },
@@ -291,69 +217,12 @@
    "streams": []
   },
   {
-   "id": "WillowXtra.us",
-   "name": "Willow Xtra",
-   "alt_names": [],
-   "country": "US",
-   "logo": "",
-   "streams": []
-  },
-  {
-   "id": "WillowSports.us",
-   "name": "Willow Sports",
-   "alt_names": [],
-   "country": "US",
-   "logo": "",
-   "streams": [
-    {
-     "url": "https://d36r8jifhgsk5j.cloudfront.net/Willow_TV1080p.m3u8",
-     "referrer": "",
-     "user_agent": "",
-     "status": "live",
-     "validated": "2026-09-12T15:21:36.071170+00:00"
-    },
-    {
-     "url": "https://jmp2.uk/plu-6972546cc62833833a187f50.m3u8",
-     "referrer": "",
-     "user_agent": "",
-     "status": "live",
-     "validated": "2026-09-12T15:21:36.071177+00:00"
-    },
-    {
-     "url": "https://amg01269-amg01269c1-firetv-us-5377.playouts.now.amagi.tv/playlist.m3u8",
-     "referrer": "",
-     "user_agent": "",
-     "status": "live",
-     "validated": "2026-09-12T15:21:36.071186+00:00"
-    },
-    {
-     "url": "https://amg01269-amg01269c1-sportstribal-emea-5204.playouts.now.amagi.tv/ts-eu-w1-n2/playlist/amg01269-willowtvfast-willowplus-sportstribalemea/playlist.m3u8",
-     "referrer": "",
-     "user_agent": "",
-     "status": "live",
-     "validated": "2026-09-12T15:21:36.071193+00:00"
-    },
-    {
-     "url": "https://amg01269-amg01269c1-distrotv-us-5379.playouts.now.amagi.tv/playlist/amg01269-willowtvfast-willowplus-distrotvus/playlist.m3u8",
-     "referrer": "",
-     "user_agent": "",
-     "status": "live",
-     "validated": "2026-09-12T15:21:36.071251+00:00"
-    },
-    {
-     "url": "https://d36r8jifhgsk5j.cloudfront.net/Willow_TV.m3u8",
-     "referrer": "",
-     "user_agent": "",
-     "status": "live",
-     "validated": "2026-09-12T15:21:36.071258+00:00"
-    }
-   ]
-  },
-  {
-   "id": "TenCricket.in",
-   "name": "Ten Cricket",
-   "alt_names": [],
-   "country": "IN",
+   "id": "FoxCricket.au",
+   "name": "Fox Cricket",
+   "alt_names": [
+    "Fox Sports 501"
+   ],
+   "country": "AU",
    "logo": "",
    "streams": []
   },
@@ -374,41 +243,172 @@
      "referrer": "https://sonyliv.com/",
      "user_agent": "Mozilla/5.0 (Linux; Android 14) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0 Mobile Safari/537.36",
      "status": "live",
-     "validated": "2026-09-12T15:21:36.071267+00:00"
+     "validated": "2026-09-12T18:48:15.421124+00:00"
     },
     {
      "url": "https://cloudplay-sonyliv.pages.dev/ten3.m3u8",
      "referrer": "https://sonyliv.com/",
      "user_agent": "Mozilla/5.0 (Linux; Android 14) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0 Mobile Safari/537.36",
      "status": "live",
-     "validated": "2026-09-12T15:21:36.071273+00:00"
+     "validated": "2026-09-12T18:48:15.421131+00:00"
     }
    ]
   },
   {
-   "id": "SonySportsTen4.in",
-   "name": "Sony Sports Ten 4",
+   "id": "SkySportsCricket.ie",
+   "name": "Sky Sports Cricket",
+   "alt_names": [],
+   "country": "IE",
+   "logo": "",
+   "streams": [
+    {
+     "url": "https://leaf.highfly.dev/m3u/now-sky-sports-cricket/live.m3u8",
+     "referrer": "",
+     "user_agent": "Mozilla/5.0 (Linux; Android 14) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0 Mobile Safari/537.36",
+     "status": "live",
+     "validated": "2026-09-12T18:48:15.421141+00:00"
+    }
+   ]
+  },
+  {
+   "id": "SkySportsCricket.uk",
+   "name": "Sky Sports Cricket",
+   "alt_names": [],
+   "country": "UK",
+   "logo": "",
+   "streams": []
+  },
+  {
+   "id": "StarSportsSelect1.in",
+   "name": "Star Sports Select 1",
+   "alt_names": [],
+   "country": "IN",
+   "logo": "",
+   "streams": []
+  },
+  {
+   "id": "ASports.pk",
+   "name": "A Sports",
+   "alt_names": [],
+   "country": "PK",
+   "logo": "",
+   "streams": []
+  },
+  {
+   "id": "SonySportsTen2.in",
+   "name": "Sony Sports Ten 2",
    "alt_names": [
-    "Sony Ten 4"
+    "Sony Ten 2",
+    "Ten 2",
+    "Ten Action",
+    "Ten Action+"
    ],
    "country": "IN",
    "logo": "",
    "streams": [
     {
-     "url": "https://cloudplay-sonyliv.pages.dev/ten4.m3u8",
+     "url": "https://cloudplay-sonyliv.pages.dev/ten2hd.m3u8",
      "referrer": "https://sonyliv.com/",
      "user_agent": "Mozilla/5.0 (Linux; Android 14) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0 Mobile Safari/537.36",
      "status": "live",
-     "validated": "2026-09-12T15:21:36.071285+00:00"
+     "validated": "2026-09-12T18:48:15.421156+00:00"
     },
     {
-     "url": "https://cloudplay-sonyliv.pages.dev/ten4hd.m3u8",
+     "url": "https://cloudplay-sonyliv.pages.dev/ten2.m3u8",
      "referrer": "https://sonyliv.com/",
      "user_agent": "Mozilla/5.0 (Linux; Android 14) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0 Mobile Safari/537.36",
      "status": "live",
-     "validated": "2026-09-12T15:21:36.071292+00:00"
+     "validated": "2026-09-12T18:48:15.421165+00:00"
     }
    ]
+  },
+  {
+   "id": "TenCricket.in",
+   "name": "Ten Cricket",
+   "alt_names": [],
+   "country": "IN",
+   "logo": "",
+   "streams": []
+  },
+  {
+   "id": "AstroCricket.my",
+   "name": "Astro Cricket",
+   "alt_names": [],
+   "country": "MY",
+   "logo": "",
+   "streams": []
+  },
+  {
+   "id": "Willow.us",
+   "name": "Willow",
+   "alt_names": [
+    "Willow TV"
+   ],
+   "country": "US",
+   "logo": "",
+   "streams": [
+    {
+     "url": "http://tvsen5.aynascope.net/willowhd/index.m3u8",
+     "referrer": "",
+     "user_agent": "",
+     "status": "live",
+     "validated": "2026-09-12T18:48:15.421175+00:00"
+    },
+    {
+     "url": "http://tvsen7.aynascope.net/rEBp38Ax/index.m3u8",
+     "referrer": "",
+     "user_agent": "",
+     "status": "live",
+     "validated": "2026-09-12T18:48:15.421181+00:00"
+    },
+    {
+     "url": "https://tvsen5.aynaott.com/willowhd/index.m3u8",
+     "referrer": "",
+     "user_agent": "",
+     "status": "live",
+     "validated": "2026-09-12T18:48:15.421187+00:00"
+    }
+   ]
+  },
+  {
+   "id": "CricketGold.au",
+   "name": "Cricket Gold",
+   "alt_names": [],
+   "country": "AU",
+   "logo": "",
+   "streams": [
+    {
+     "url": "https://streams2.sofast.tv/ptnr-yupptv/title-cricketgold/v1/master/611d79b11b77e2f571934fd80ca1413453772ac7/b2048bb8-1686-4432-aa50-647245383e0c/manifest.m3u8",
+     "referrer": "",
+     "user_agent": "",
+     "status": "live",
+     "validated": "2026-09-12T18:48:15.421195+00:00"
+    },
+    {
+     "url": "https://streams2.sofast.tv/scheduler/scheduleMaster/418.m3u8",
+     "referrer": "",
+     "user_agent": "",
+     "status": "live",
+     "validated": "2026-09-12T18:48:15.421201+00:00"
+    },
+    {
+     "url": "https://d382r3rgbxdixq.cloudfront.net/scheduler/scheduleMaster/418.m3u8",
+     "referrer": "",
+     "user_agent": "",
+     "status": "live",
+     "validated": "2026-09-12T18:48:15.421207+00:00"
+    }
+   ]
+  },
+  {
+   "id": "StarSports1.in",
+   "name": "Star Sports 1",
+   "alt_names": [
+    "Star Sports"
+   ],
+   "country": "IN",
+   "logo": "",
+   "streams": []
   }
  ]
 }
