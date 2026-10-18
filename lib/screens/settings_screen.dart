@@ -1,8 +1,12 @@
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../config/constants.dart';
+import '../utils/theme.dart';
 
+/// Settings restyled as an iOS grouped inset list: section headers outside
+/// the group, elevated cells inside with hairline separators.
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
 
@@ -65,80 +69,96 @@ class _SettingsScreenState extends State<SettingsScreen> {
   @override
   Widget build(BuildContext context) {
     if (!_loaded) {
-      return const Center(child: CircularProgressIndicator());
+      return const Center(
+        child: SizedBox(
+          width: 28,
+          height: 28,
+          child: CircularProgressIndicator(strokeWidth: 2.5, color: AppColors.primary),
+        ),
+      );
     }
 
     return ListView(
-      padding: const EdgeInsets.all(AppConstants.defaultPadding),
+      padding: const EdgeInsets.fromLTRB(20, 16, 20, 104),
       children: [
-        _header('Connection'),
-        Card(
-          child: Padding(
-            padding: const EdgeInsets.all(12),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                TextField(
-                  controller: _urlController,
-                  keyboardType: TextInputType.url,
-                  autocorrect: false,
-                  decoration: const InputDecoration(
-                    labelText: 'Backend URL',
-                    hintText: 'http://10.0.2.2:8000',
+        _section('Connection'),
+        _group(
+          children: [
+            Padding(
+              padding: const EdgeInsets.all(14),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  CupertinoSearchTextField(
+                    controller: _urlController,
+                    placeholder: 'Backend URL',
+                    style: const TextStyle(color: AppColors.textBody, fontSize: 15),
+                    placeholderStyle: const TextStyle(
+                      color: AppColors.textFaint,
+                      fontSize: 15,
+                    ),
                   ),
-                ),
-                const SizedBox(height: 8),
-                Align(
-                  alignment: Alignment.centerRight,
-                  child: FilledButton(
-                    onPressed: _saveUrl,
-                    child: const Text('Save'),
+                  const SizedBox(height: 12),
+                  Align(
+                    alignment: Alignment.centerRight,
+                    child: FilledButton(
+                      onPressed: _saveUrl,
+                      child: const Text('Save'),
+                    ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
-          ),
+          ],
         ),
-        const SizedBox(height: 24),
-        _header('Appearance'),
-        const Card(
-          child: ListTile(
-            leading: Icon(Icons.dark_mode_outlined),
-            title: Text('Theme'),
-            subtitle: Text('Dark (default)'),
-          ),
-        ),
-        const SizedBox(height: 24),
-        _header('About'),
-        const Card(
-          child: Padding(
-            padding: EdgeInsets.all(16),
-            child: Text(
-              'Cricket Streams plays free, publicly listed streams sourced from '
-              'the iptv-org open-source project. No ads, no accounts. '
-              'Stream availability depends entirely on the upstream providers.',
+        _section('About'),
+        _group(
+          children: const [
+            Padding(
+              padding: EdgeInsets.all(14),
+              child: Text(
+                'Cricket Streams plays free, publicly listed streams sourced from '
+                'the iptv-org open-source project. No ads, no accounts. '
+                'Stream availability depends entirely on the upstream providers.',
+                style: TextStyle(color: AppColors.textMuted, fontSize: 14, height: 1.4),
+              ),
             ),
-          ),
+          ],
         ),
-        const SizedBox(height: 24),
-        _header('Storage'),
-        Card(
-          child: ListTile(
-            leading: const Icon(Icons.delete_outline),
-            title: const Text('Clear cache'),
-            subtitle: const Text('Keeps your backend URL'),
-            onTap: _clearCache,
-          ),
+        _section('Storage'),
+        _group(
+          children: [
+            ListTile(
+              contentPadding: const EdgeInsets.symmetric(horizontal: 14),
+              leading: const Icon(CupertinoIcons.delete, size: 22),
+              title: const Text('Clear cache', style: TextStyle(fontSize: 16)),
+              subtitle: const Text('Keeps your backend URL', style: TextStyle(fontSize: 13, color: AppColors.textMuted)),
+              onTap: _clearCache,
+            ),
+          ],
         ),
       ],
     );
   }
 
-  Widget _header(String text) => Padding(
-        padding: const EdgeInsets.only(bottom: 8, left: 4),
+  Widget _section(String text) => Padding(
+        padding: const EdgeInsets.fromLTRB(4, 20, 4, 8),
         child: Text(
           text.toUpperCase(),
-          style: Theme.of(context).textTheme.bodySmall,
+          style: const TextStyle(
+            color: AppColors.textMuted,
+            fontSize: 12,
+            fontWeight: FontWeight.w600,
+            letterSpacing: 0.4,
+          ),
         ),
+      );
+
+  Widget _group({required List<Widget> children}) => Container(
+        decoration: BoxDecoration(
+          color: AppColors.surface,
+          borderRadius: BorderRadius.circular(14),
+        ),
+        child: Column(children: children),
       );
 }

@@ -23,7 +23,8 @@ class PlayerScreen extends StatefulWidget {
   State<PlayerScreen> createState() => _PlayerScreenState();
 }
 
-class _PlayerScreenState extends State<PlayerScreen> {
+class _PlayerScreenState extends State<PlayerScreen>
+    with SingleTickerProviderStateMixin {
   late Player _player;
   late VideoController _videoController;
 
@@ -31,6 +32,17 @@ class _PlayerScreenState extends State<PlayerScreen> {
   bool _isLoading = true;
   bool _isStalled = false;
   String? _errorMessage;
+
+  // Chrome fade: the overlay follows the finger (any tap animates the same
+  // controller from its current position — interruptible by design).
+  late final AnimationController _chrome = AnimationController(
+    vsync: this,
+    duration: const Duration(milliseconds: 200),
+    // Exit faster than enter: chrome that lingers while hiding feels stuck.
+    reverseDuration: const Duration(milliseconds: 120),
+    value: 1.0,
+  );
+  bool _chromeHidden = false;
 
   // Stall detector: if playback neither progresses nor completes within
   // [stallTimeout] of starting (or after a buffering pause), the source is
@@ -55,8 +67,9 @@ class _PlayerScreenState extends State<PlayerScreen> {
   Future<void> _init() async {
     MediaKit.ensureInitialized();
     _player = Player();
-    await _player.open(Media(_currentStream.url,
-        httpHeaders: _headersFor(_currentStream)));
+    await _player.open(
+      Media(_currentStream.url, httpHeaders: _headersFor(_currentStream)),
+    );
     _videoController = VideoController(_player);
 
     _player.stream.completed.listen((_) {});
@@ -78,6 +91,9 @@ class _PlayerScreenState extends State<PlayerScreen> {
     _player.stream.playing.listen((p) {
       if (!mounted) return;
       if (p) {
+        // Causal haptic: the stream just came alive, same frame as the
+        // loading overlay disappears.
+        if (_isLoading) HapticFeedback.lightImpact();
         _isLoading = false;
         _cancelStallTimer();
       }
@@ -89,10 +105,10 @@ class _PlayerScreenState extends State<PlayerScreen> {
   }
 
   Map<String, String> _headersFor(StreamUrl stream) => {
-        if (stream.referrer.isNotEmpty) 'Referer': stream.referrer,
-        if (stream.userAgent.isNotEmpty) 'User-Agent': stream.userAgent,
-        'Accept': '*/*',
-      };
+    if (stream.referrer.isNotEmpty) 'Referer': stream.referrer,
+    if (stream.userAgent.isNotEmpty) 'User-Agent': stream.userAgent,
+    'Accept': '*/*',
+  };
 
   void _startStallTimer() {
     _cancelStallTimer();
@@ -121,6 +137,8 @@ class _PlayerScreenState extends State<PlayerScreen> {
         _isLoading = false;
         _errorMessage = 'All sources failed. Channel may be offline.';
       });
+      // Error feedback: one meaningful beat, only on the final failure.
+      HapticFeedback.heavyImpact();
       return;
     }
 
@@ -130,8 +148,9 @@ class _PlayerScreenState extends State<PlayerScreen> {
       _errorMessage = null;
       _isStalled = false;
     });
-    await _player.open(Media(_currentStream.url,
-        httpHeaders: _headersFor(_currentStream)));
+    await _player.open(
+      Media(_currentStream.url, httpHeaders: _headersFor(_currentStream)),
+    );
   }
 
   Future<void> _selectStream(int index) async {
@@ -142,8 +161,18 @@ class _PlayerScreenState extends State<PlayerScreen> {
       _errorMessage = null;
       _lastFailoverAt = null;
     });
-    await _player.open(Media(_currentStream.url,
-        httpHeaders: _headersFor(_currentStream)));
+    await _player.open(
+      Media(_currentStream.url, httpHeaders: _headersFor(_currentStream)),
+    );
+  }
+
+  void _toggleChrome() {
+    setState(() {
+      _chromeHidden = !_chromeHidden;
+      // Animate from the current value, never the target: mid-flight taps
+      // reverse without a jump.
+      _chromeHidden ? _chrome.reverse() : _chrome.forward();
+    });
   }
 
   void _showSourceSelector() {
@@ -153,13 +182,19 @@ class _PlayerScreenState extends State<PlayerScreen> {
       builder: (context) => SafeArea(
         child: ListView.builder(
           shrinkWrap: true,
+          padding: const EdgeInsets.fromLTRB(8, 0, 8, 12),
           itemCount: widget.channel.streams.length,
           itemBuilder: (context, i) {
             final stream = widget.channel.streams[i];
             final selected = i == _currentStreamIndex;
             return ListTile(
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
               leading: Icon(
-                selected ? Icons.play_circle : Icons.play_circle_outline,
+                selected
+                    ? Icons.play_circle_rounded
+                    : Icons.play_circle_outline_rounded,
                 color: selected ? AppColors.primary : AppColors.textMuted,
               ),
               title: Text('Source ${i + 1}'),
@@ -167,6 +202,10 @@ class _PlayerScreenState extends State<PlayerScreen> {
                 stream.url,
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
+                style: const TextStyle(
+                  color: AppColors.textMuted,
+                  fontSize: 12,
+                ),
               ),
               onTap: () {
                 Navigator.of(context).pop();
@@ -185,44 +224,55 @@ class _PlayerScreenState extends State<PlayerScreen> {
       backgroundColor: AppColors.surface,
       builder: (context) => SafeArea(
         child: Padding(
-          padding: const EdgeInsets.all(16),
+          padding: const EdgeInsets.fromLTRB(20, 8, 20, 16),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Text('Playback',
-                  style: TextStyle(
-                      color: Colors.white, fontWeight: FontWeight.bold)),
-              const SizedBox(height: 16),
+              const Text('Playback', style: Glass.titleStyle),
+              const SizedBox(height: 12),
               // Volume
-              Row(children: [
-                const Icon(Icons.volume_up, color: Colors.white),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: Slider(
-                    value: _player.state.volume.clamp(0.0, 1.0),
-                    onChanged: (v) => _player.setVolume(v),
+              Row(
+                children: [
+                  const Icon(
+                    Icons.volume_up_rounded,
+                    color: AppColors.textBody,
+                    size: 22,
                   ),
-                ),
-              ]),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Slider(
+                      value: _player.state.volume.clamp(0.0, 1.0),
+                      onChanged: (v) => _player.setVolume(v),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 4),
               // Speed
-              Row(children: [
-                const Icon(Icons.speed, color: Colors.white),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: Wrap(
-                    spacing: 8,
-                    children: [0.5, 1.0, 1.5, 2.0].map((s) {
-                      final active = (_player.state.rate - s).abs() < 0.01;
-                      return ChoiceChip(
-                        label: Text('${s}x'),
-                        selected: active,
-                        onSelected: (_) => _player.setRate(s),
-                      );
-                    }).toList(),
+              Row(
+                children: [
+                  const Icon(
+                    Icons.speed_rounded,
+                    color: AppColors.textBody,
+                    size: 22,
                   ),
-                ),
-              ]),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Wrap(
+                      spacing: 8,
+                      children: [0.5, 1.0, 1.5, 2.0].map((s) {
+                        final active = (_player.state.rate - s).abs() < 0.01;
+                        return ChoiceChip(
+                          label: Text('${s}x'),
+                          selected: active,
+                          onSelected: (_) => _player.setRate(s),
+                        );
+                      }).toList(),
+                    ),
+                  ),
+                ],
+              ),
             ],
           ),
         ),
@@ -232,6 +282,7 @@ class _PlayerScreenState extends State<PlayerScreen> {
 
   @override
   void dispose() {
+    _chrome.dispose();
     _cancelStallTimer();
     _player.dispose();
     SystemChrome.setPreferredOrientations([
@@ -248,133 +299,217 @@ class _PlayerScreenState extends State<PlayerScreen> {
       canPop: true,
       child: Scaffold(
         backgroundColor: Colors.black,
-        body: Stack(
-          children: [
-            Positioned.fill(
-              child: Video(
-                controller: _videoController,
-                controls: NoVideoControls,
+        body: GestureDetector(
+          behavior: HitTestBehavior.opaque,
+          onTap: _toggleChrome,
+          child: Stack(
+            children: [
+              Positioned.fill(
+                child: Video(
+                  controller: _videoController,
+                  controls: NoVideoControls,
+                ),
               ),
-            ),
-            if (_errorMessage != null) _errorView(_errorMessage!),
-            if (_isLoading && _errorMessage == null)
-              const Center(
-                child: CircularProgressIndicator(color: AppColors.primary),
+              // Always mounted so the error fades in/out instead of popping
+              // over the video; IgnorePointer keeps the hidden view inert.
+              IgnorePointer(
+                ignoring: _errorMessage == null,
+                child: AnimatedOpacity(
+                  opacity: _errorMessage != null ? 1.0 : 0.0,
+                  duration: MediaQuery.of(context).disableAnimations
+                      ? Duration.zero
+                      : const Duration(milliseconds: 180),
+                  curve: Curves.easeOutCubic,
+                  child: _errorView(
+                    _errorMessage ??
+                        'All sources failed. '
+                            'Channel may be offline.',
+                  ),
+                ),
               ),
-            Positioned(
-              top: 12,
-              left: 12,
-              right: 12,
-              child: _overlay(),
-            ),
-          ],
+              if (_isLoading && _errorMessage == null)
+                const IgnorePointer(
+                  child: Center(
+                    child: SizedBox(
+                      width: 32,
+                      height: 32,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2.5,
+                        color: AppColors.primary,
+                      ),
+                    ),
+                  ),
+                ),
+              // Chrome rides the same shared controller. The error view stays
+              // visible separately: a mode where the story must not hide.
+              if (_errorMessage == null) _chromeOverlay(),
+            ],
+          ),
         ),
       ),
     );
   }
 
+  Widget _chromeOverlay() {
+    return Positioned(
+      top: MediaQuery.of(context).padding.top + 12,
+      left: 12,
+      right: 12,
+      child: FadeTransition(opacity: _chrome, child: _overlay()),
+    );
+  }
+
   Widget _errorView(String message) => Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            const Icon(Icons.error_outline, color: Colors.red, size: 48),
-            const SizedBox(height: 16),
-            const Text('Stream error',
-                style: TextStyle(color: Colors.white)),
-            const SizedBox(height: 8),
-            Text(
-              message,
-              textAlign: TextAlign.center,
-              style: const TextStyle(color: Colors.white54, fontSize: 12),
+    child: Padding(
+      padding: const EdgeInsets.all(28),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          const Icon(
+            Icons.error_outline_rounded,
+            color: AppColors.error,
+            size: 44,
+          ),
+          const SizedBox(height: 16),
+          const Text(
+            'Stream error',
+            style: TextStyle(
+              color: AppColors.textBody,
+              fontSize: 17,
+              fontWeight: FontWeight.w600,
             ),
-            const SizedBox(height: 16),
-            ElevatedButton(
+          ),
+          const SizedBox(height: 6),
+          Text(
+            message,
+            textAlign: TextAlign.center,
+            style: const TextStyle(color: AppColors.textMuted, fontSize: 14),
+          ),
+          const SizedBox(height: 20),
+          Glass.container(
+            radius: 12,
+            child: TextButton.icon(
               // Manual retry must not be swallowed by the failover cooldown.
               onPressed: () {
                 _lastFailoverAt = null;
                 _switchToNextStream();
               },
-              child: const Text('Try next source'),
+              style: TextButton.styleFrom(
+                foregroundColor: AppColors.primary,
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 10,
+                ),
+              ),
+              icon: const Icon(Icons.skip_next_rounded, size: 18),
+              label: const Text('Try next source'),
             ),
-          ],
-        ),
-      );
+          ),
+        ],
+      ),
+    ),
+  );
 
   Widget _overlay() {
     return Row(
       children: [
-        Container(
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-          decoration: BoxDecoration(
-            color: Colors.black54,
-            borderRadius: BorderRadius.circular(8),
-          ),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Text(
-                countryFlag(widget.channel.country),
-                style: const TextStyle(fontSize: 16),
-              ),
-              const SizedBox(width: 8),
-              ConstrainedBox(
-                constraints: const BoxConstraints(maxWidth: 220),
-                child: Text(
-                  widget.channel.name,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontWeight: FontWeight.bold,
+        Expanded(
+          child: Glass.container(
+            radius: 18,
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  countryFlag(widget.channel.country),
+                  style: const TextStyle(fontSize: 16),
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        widget.channel.name,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(
+                          color: AppColors.textBody,
+                          fontWeight: FontWeight.w600,
+                          fontSize: 15,
+                        ),
+                      ),
+                      const SizedBox(height: 1),
+                      Text(
+                        'Source ${_currentStreamIndex + 1}/${widget.channel.streams.length}',
+                        style: const TextStyle(
+                          color: AppColors.textMuted,
+                          fontSize: 12,
+                        ),
+                      ),
+                    ],
                   ),
                 ),
-              ),
-              const SizedBox(width: 8),
-              Text(
-                'Source ${_currentStreamIndex + 1}/${widget.channel.streams.length}',
-                style: const TextStyle(color: Colors.white70, fontSize: 12),
-              ),
-              if (_isLoading) ...[
-                const SizedBox(width: 8),
-                const SizedBox(
-                  width: 12,
-                  height: 12,
-                  child: CircularProgressIndicator(
-                    strokeWidth: 2,
-                    color: AppColors.primary,
+                if (_isLoading)
+                  const SizedBox(
+                    width: 12,
+                    height: 12,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      color: AppColors.primary,
+                    ),
                   ),
-                ),
+                if (_isStalled)
+                  const Icon(
+                    Icons.hourglass_bottom_rounded,
+                    color: Color(0xFFFFD60A),
+                    size: 16,
+                  ),
+                if (_errorMessage != null)
+                  const Icon(
+                    Icons.warning_amber_rounded,
+                    color: Color(0xFFFFD60A),
+                    size: 16,
+                  ),
               ],
-              if (_isStalled) ...[
-                const SizedBox(width: 8),
-                const Icon(Icons.hourglass_bottom,
-                    color: Colors.orange, size: 16),
-              ],
-              if (_errorMessage != null) ...[
-                const SizedBox(width: 8),
-                const Icon(Icons.warning_amber, color: Colors.orange, size: 16),
-              ],
-            ],
+            ),
           ),
         ),
-        const Spacer(),
-        IconButton(
-          tooltip: 'Settings',
-          onPressed: _showSettingsSheet,
-          icon: const Icon(Icons.tune, color: Colors.white),
-          style: IconButton.styleFrom(backgroundColor: Colors.black54),
+        const SizedBox(width: 8),
+        Glass.circle(
+          child: IconButton(
+            tooltip: 'Settings',
+            onPressed: _showSettingsSheet,
+            icon: const Icon(
+              Icons.tune_rounded,
+              color: AppColors.textBody,
+              size: 20,
+            ),
+          ),
         ),
-        IconButton(
-          tooltip: 'Sources',
-          onPressed: _showSourceSelector,
-          icon: const Icon(Icons.library_books, color: Colors.white),
-          style: IconButton.styleFrom(backgroundColor: Colors.black54),
+        const SizedBox(width: 8),
+        Glass.circle(
+          child: IconButton(
+            tooltip: 'Sources',
+            onPressed: _showSourceSelector,
+            icon: const Icon(
+              Icons.swap_horiz_rounded,
+              color: AppColors.textBody,
+              size: 20,
+            ),
+          ),
         ),
-        IconButton(
-          tooltip: 'Close player',
-          onPressed: () => Navigator.of(context).pop(),
-          icon: const Icon(Icons.close, color: Colors.white),
-          style: IconButton.styleFrom(backgroundColor: Colors.black54),
+        const SizedBox(width: 8),
+        Glass.circle(
+          child: IconButton(
+            tooltip: 'Close player',
+            onPressed: () => Navigator.of(context).pop(),
+            icon: const Icon(
+              Icons.close_rounded,
+              color: AppColors.textBody,
+              size: 20,
+            ),
+          ),
         ),
       ],
     );

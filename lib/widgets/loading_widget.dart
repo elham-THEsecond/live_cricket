@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_spinkit/flutter_spinkit.dart';
 
 import '../utils/theme.dart';
 
@@ -14,12 +13,16 @@ class LoadingWidget extends StatelessWidget {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          const SpinKitRing(color: AppColors.primary, size: 48, lineWidth: 3),
-          const SizedBox(height: 16),
-          Text(
-            message,
-            style: const TextStyle(color: AppColors.textMuted, fontSize: 14),
+          const SizedBox(
+            width: 28,
+            height: 28,
+            child: CircularProgressIndicator(
+              strokeWidth: 2.5,
+              color: AppColors.primary,
+            ),
           ),
+          const SizedBox(height: 14),
+          Text(message, style: const TextStyle(color: AppColors.textMuted, fontSize: 14)),
         ],
       ),
     );

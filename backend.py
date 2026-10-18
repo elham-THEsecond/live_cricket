@@ -7,14 +7,17 @@
 Channels come from the iptv-org index (https://iptv-org.github.io/api/),
 filtered to cricket channels, cached in backend_cache.json. LOCAL_CHANNELS
 overrides/adds entries that iptv-org can't represent (user-supplied URLs).
-Cache refreshes once per day (RFC-9111 max-age); POST /api/refresh forces it.
+Cache refreshes once per day (RFC-9111 max-age, stale-while-revalidate);
+POST /api/refresh forces it.
 """
 import json
+import os
+import threading
 import time
 import urllib.error
 import urllib.request
 from datetime import datetime, timezone
-from http.server import BaseHTTPRequestHandler, HTTPServer
+from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 
 # ponytail: user-supplied channels iptv-org can't carry (geo-restricted,
 # DRM-free feeds from other sources, custom m3u8s). Add entries with the
@@ -103,15 +106,45 @@ def load_channels():
     return list(merged.values())
 
 
+_refresh_lock = threading.Lock()
+_refreshing = False
+
+
 def serve_payload():
-    """Serve from cache; refresh on POST /api/refresh."""
+    """Serve cached (possibly stale) data immediately; refresh in background.
+
+    A live iptv-org fetch takes ~30s; doing it inline in the request handler
+    made the first GET after cache expiry block for that long (measured 33s).
+    Only a true cold start (no cache file) fetches inline, since there is
+    nothing to serve yet.
+    """
+    global _refreshing
     if _stale():
-        try:
-            _write_cache(load_channels())
-        except (urllib.error.URLError, OSError, ValueError, KeyError):
-            # offline: keep serving last-known-good cache, if any
-            pass
+        if os.path.exists(CACHE_FILE):
+            with _refresh_lock:
+                if not _refreshing:
+                    _refreshing = True
+                    threading.Thread(target=_background_refresh, daemon=True).start()
+        else:
+            # shortcut: cold start still fetches inline and can duplicate
+            # fetches under simultaneous first requests; upgrade if that hurts
+            try:
+                _write_cache(load_channels())
+            except (urllib.error.URLError, OSError, ValueError, KeyError):
+                pass
     return _cached()
+
+
+def _background_refresh():
+    global _refreshing
+    try:
+        _write_cache(load_channels())
+    except (urllib.error.URLError, OSError, ValueError, KeyError):
+        # offline: keep serving last-known-good cache
+        pass
+    finally:
+        with _refresh_lock:
+            _refreshing = False
 
 
 def _stale():
@@ -146,7 +179,6 @@ def _write_cache(channels):
     tmp = CACHE_FILE + ".tmp"
     with open(tmp, "w") as f:
         json.dump({"ts": time.time(), "channels": channels}, f, indent=1)
-    import os
     os.replace(tmp, CACHE_FILE)
 
 
@@ -183,7 +215,6 @@ class Handler(BaseHTTPRequestHandler):
 
 
 if __name__ == "__main__":
-    import os
     port = int(os.environ.get("PORT", "8000"))  # Render/Railway inject PORT
     print(f"serving on http://0.0.0.0:{port}  (GET /api/streams, POST /api/refresh)")
-    HTTPServer(("0.0.0.0", port), Handler).serve_forever()
+    ThreadingHTTPServer(("0.0.0.0", port), Handler).serve_forever()

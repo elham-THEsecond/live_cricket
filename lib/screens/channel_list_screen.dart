@@ -1,6 +1,8 @@
 import 'dart:async';
 
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -8,11 +10,14 @@ import '../config/constants.dart';
 import '../models/channel.dart';
 import '../providers/favorites_provider.dart';
 import '../providers/stream_provider.dart';
+import '../utils/theme.dart';
 import '../widgets/channel_tile.dart';
 import '../widgets/empty_state_widget.dart';
 import '../widgets/error_widget.dart';
 import '../widgets/loading_widget.dart';
 
+/// Channels list with an iOS-style search field and sliding segmented
+/// control (All / Favorites).
 class ChannelListScreen extends StatefulWidget {
   const ChannelListScreen({super.key});
 
@@ -52,91 +57,118 @@ class _ChannelListScreenState extends State<ChannelListScreen> {
     final provider = context.watch<StreamsProvider>();
     final favorites = context.watch<FavoritesProvider>();
 
+    late final Widget body;
     if (provider.isLoading && provider.allChannels.isEmpty) {
-      return const LoadingWidget();
-    }
-    if (provider.hasError && provider.allChannels.isEmpty) {
-      return CustomErrorWidget(
-        message: provider.errorMessage ?? 'Something went wrong',
-        onRetry: provider.fetchStreams,
+      body = const KeyedSubtree(key: ValueKey('loading'), child: LoadingWidget());
+    } else if (provider.hasError && provider.allChannels.isEmpty) {
+      body = KeyedSubtree(
+        key: const ValueKey('error'),
+        child: CustomErrorWidget(
+          message: provider.errorMessage ?? 'Something went wrong',
+          onRetry: provider.fetchStreams,
+        ),
+      );
+    } else if (provider.isEmpty) {
+      body = KeyedSubtree(
+        key: const ValueKey('empty'),
+        child: EmptyStateWidget(onRefresh: provider.fetchStreams),
+      );
+    } else {
+      final channels = _favoritesOnly
+          ? provider.channels.where((c) => favorites.isFavorite(c.id)).toList()
+          : provider.channels;
+      body = KeyedSubtree(
+        key: const ValueKey('content'),
+        child: _contentList(context, provider, favorites, channels),
       );
     }
-    if (provider.isEmpty) {
-      return EmptyStateWidget(onRefresh: provider.fetchStreams);
-    }
 
-    final channels = _favoritesOnly
-        ? provider.channels.where((c) => favorites.isFavorite(c.id)).toList()
-        : provider.channels;
+    return AnimatedSwitcher(
+      // Honor the OS's reduce-motion setting with an instant swap; otherwise
+      // fade only — a slide on a data list reads as bounce.
+      duration: MediaQuery.of(context).disableAnimations
+          ? Duration.zero
+          : const Duration(milliseconds: 180),
+      switchInCurve: Curves.easeOutCubic,
+      switchOutCurve: Curves.easeInCubic,
+      transitionBuilder: (child, animation) =>
+          FadeTransition(opacity: animation, child: child),
+      child: body,
+    );
+  }
+
+  Widget _contentList(
+    BuildContext context,
+    StreamsProvider provider,
+    FavoritesProvider favorites,
+    List<Channel> channels,
+  ) {
+    // Space the list clears so content ends above the floating tab bar.
+    const bottomClearance = 24.0 + 56.0 + 24.0;
 
     return Column(
       children: [
         Padding(
-          padding: const EdgeInsets.fromLTRB(
-            AppConstants.defaultPadding,
-            8,
-            AppConstants.defaultPadding,
-            8,
+          padding: const EdgeInsets.fromLTRB(20, 12, 20, 4),
+          child: CupertinoSearchTextField(
+            controller: _searchController,
+            placeholder: 'Search channels',
+            style: const TextStyle(color: AppColors.textBody, fontSize: 16),
+            placeholderStyle: const TextStyle(
+              color: AppColors.textFaint,
+              fontSize: 16,
+            ),
+            onChanged: _onSearchChanged,
           ),
-          child: Row(
-            children: [
-              Expanded(
-                child: TextField(
-                  controller: _searchController,
-                  onChanged: _onSearchChanged,
-                  decoration: InputDecoration(
-                    hintText: 'Search channels',
-                    prefixIcon: const Icon(Icons.search),
-                    suffixIcon: _searchController.text.isEmpty
-                        ? null
-                        : IconButton(
-                            icon: const Icon(Icons.clear),
-                            tooltip: 'Clear search',
-                            onPressed: () {
-                              _searchController.clear();
-                              _onSearchChanged('');
-                            },
-                          ),
-                  ),
-                ),
+        ),
+        Padding(
+          padding: const EdgeInsets.fromLTRB(20, 8, 20, 4),
+          child: CupertinoSlidingSegmentedControl<bool>(
+            groupValue: _favoritesOnly,
+            onValueChanged: (v) => setState(() => _favoritesOnly = v ?? false),
+            thumbColor: AppColors.cellElevated,
+            backgroundColor: AppColors.surface,
+            children: const {
+              false: Padding(
+                padding: EdgeInsets.symmetric(horizontal: 24, vertical: 6),
+                child: Text('All', style: TextStyle(fontSize: 14, color: AppColors.textBody)),
               ),
-              const SizedBox(width: 8),
-              IconButton(
-                tooltip: _favoritesOnly ? 'Show all channels' : 'Show favorites',
-                onPressed: () =>
-                    setState(() => _favoritesOnly = !_favoritesOnly),
-                icon: Icon(
-                  _favoritesOnly ? Icons.star : Icons.star_border,
-                  color: _favoritesOnly ? Theme.of(context).colorScheme.primary : null,
-                ),
+              true: Padding(
+                padding: EdgeInsets.symmetric(horizontal: 24, vertical: 6),
+                child: Text('Favorites', style: TextStyle(fontSize: 14, color: AppColors.textBody)),
               ),
-            ],
+            },
           ),
         ),
         Expanded(
           child: RefreshIndicator(
+            color: AppColors.primary,
+            backgroundColor: AppColors.cellElevated,
             onRefresh: provider.refresh,
             child: channels.isEmpty
                 ? ListView(
                     // ListView (not Center) so pull-to-refresh still works here.
+                    physics: const AlwaysScrollableScrollPhysics(),
                     children: [
-                      SizedBox(height: MediaQuery.of(context).size.height * 0.15),
+                      SizedBox(height: MediaQuery.of(context).size.height * 0.1),
                       EmptyStateWidget(onRefresh: provider.fetchStreams),
                     ],
                   )
                 : ListView.builder(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: AppConstants.defaultPadding,
-                    ),
+                    padding: const EdgeInsets.fromLTRB(16, 4, 16, bottomClearance),
                     itemCount: channels.length,
+                    physics: const AlwaysScrollableScrollPhysics(),
                     itemBuilder: (context, i) {
                       final channel = channels[i];
                       return ChannelTile(
                         channel: channel,
                         isFavorite: favorites.isFavorite(channel.id),
                         onTap: () => _openChannel(channel),
-                        onFavoriteToggle: () =>
-                            favorites.toggleFavorite(channel.id),
+                        onFavoriteToggle: () {
+                          // Same frame as the star swap — one causal beat.
+                          HapticFeedback.selectionClick();
+                          favorites.toggleFavorite(channel.id);
+                        },
                       );
                     },
                   ),

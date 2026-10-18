@@ -11,32 +11,44 @@ class EmptyStateWidget extends StatelessWidget {
   Widget build(BuildContext context) {
     return Center(
       child: Padding(
-        padding: const EdgeInsets.all(24),
+        padding: const EdgeInsets.all(28),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(Icons.sports_cricket,
-                color: AppColors.textMuted.withValues(alpha: 0.6), size: 64),
+            // Single-beat entrance: soften the arrival, then stay still.
+            TweenAnimationBuilder<double>(
+              tween: Tween(begin: 0.0, end: 1.0),
+              duration: MediaQuery.of(context).disableAnimations
+                  ? Duration.zero
+                  : const Duration(milliseconds: 260),
+              curve: Curves.easeOutCubic,
+              builder: (context, t, child) => Opacity(
+                opacity: t,
+                child: Transform.scale(scale: 0.94 + 0.06 * t, child: child),
+              ),
+              child: const Icon(
+                Icons.sports_cricket_rounded,
+                color: AppColors.textFaint,
+                size: 56,
+              ),
+            ),
             const SizedBox(height: 16),
             const Text(
               'No channels found',
-              style: TextStyle(color: Colors.white, fontSize: 18),
+              style: TextStyle(
+                color: AppColors.textBody,
+                fontSize: 17,
+                fontWeight: FontWeight.w600,
+              ),
             ),
-            const SizedBox(height: 8),
+            const SizedBox(height: 6),
             const Text(
-              'Try refreshing or check back later',
+              'Search something else, or check back later',
               textAlign: TextAlign.center,
               style: TextStyle(color: AppColors.textMuted, fontSize: 14),
             ),
-            const SizedBox(height: 24),
-            ElevatedButton(
-              onPressed: onRefresh,
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.primary,
-                foregroundColor: Colors.black,
-              ),
-              child: const Text('Refresh'),
-            ),
+            const SizedBox(height: 20),
+            FilledButton(onPressed: onRefresh, child: const Text('Refresh')),
           ],
         ),
       ),

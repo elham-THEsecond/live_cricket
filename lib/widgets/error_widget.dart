@@ -17,26 +17,29 @@ class CustomErrorWidget extends StatelessWidget {
   Widget build(BuildContext context) {
     return Center(
       child: Padding(
-        padding: const EdgeInsets.all(24),
+        padding: const EdgeInsets.all(28),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            const Icon(Icons.wifi_off, color: AppColors.error, size: 48),
+            const Icon(Icons.wifi_off_rounded, color: AppColors.textFaint, size: 44),
             const SizedBox(height: 16),
+            Text(
+              'Can\u2019t reach the stream list',
+              textAlign: TextAlign.center,
+              style: const TextStyle(
+                color: AppColors.textBody,
+                fontSize: 17,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+            const SizedBox(height: 6),
             Text(
               message,
               textAlign: TextAlign.center,
-              style: const TextStyle(color: Colors.white, fontSize: 16),
+              style: const TextStyle(color: AppColors.textMuted, fontSize: 14),
             ),
-            const SizedBox(height: 24),
-            ElevatedButton(
-              onPressed: onRetry,
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.primary,
-                foregroundColor: Colors.black,
-              ),
-              child: const Text('Retry'),
-            ),
+            const SizedBox(height: 20),
+            FilledButton(onPressed: onRetry, child: const Text('Try again')),
           ],
         ),
       ),
